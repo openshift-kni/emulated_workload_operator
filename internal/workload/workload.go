@@ -2,6 +2,7 @@ package workload
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"time"
@@ -57,6 +58,8 @@ func DeleteWorkloadPod(ctx context.Context, clientSet *dynamic.DynamicClient, wa
 	podName := "workload"
 	ns := "test"
 
+	fmt.Println("DeleteWorkloadPod")
+	log.Printf(" DeleteWorkloadPod \n")
 	// Define the GVR
 	podGVR := schema.GroupVersionResource{
 		Group:    "",
@@ -70,7 +73,7 @@ func DeleteWorkloadPod(ctx context.Context, clientSet *dynamic.DynamicClient, wa
 		return true
 	} else if err != nil {
 		log.Printf(" Delete workload pod failed err=%s \n", err)
-		return false
+		//return false
 	}
 	//waiting for the pods deleted
 	if wait == false {
@@ -92,18 +95,40 @@ func ApplyWorkloadPod(ctx context.Context, clientSet *dynamic.DynamicClient, wor
 	podYaml, err := os.ReadFile(workloadPath)
 
 	if err != nil {
-		log.Println("Failed to read the workload.yaml with err %s, exit", err)
+		log.Println("Failed to read the workload.yaml with err exit", err)
 		return false
 	}
 
 	var podCfg map[string]interface{}
 	err = yaml.Unmarshal(podYaml, &podCfg)
 	if err != nil {
-		log.Println("Failed to Unmarshal the workload.yaml with err %s, exit", err)
+		log.Println("Failed to Unmarshal the workload.yaml with err exit", err)
 		return false
 	}
 
 	pod := &unstructured.Unstructured{Object: podCfg}
+
+	podUid := os.Getenv("POD_UID")
+	podName := os.Getenv("POD_NAME")
+
+	if podName == "" || podUid == "" {
+		log.Println("Failed to read the pod name or uid ")
+	} else {
+		ownerReferences := make([]interface{}, 0)
+		ownerReferences = append(ownerReferences, map[string]interface{}{
+			"apiVersion":         "v1",
+			"kind":               "pod",
+			"name":               podName,
+			"uid":                podUid,
+			"controller":         func() *bool { b := true; return &b }(),
+			"blockOwnerDeletion": "true",
+		})
+
+		err = unstructured.SetNestedSlice(pod.Object, ownerReferences, "metadata", "ownerReferences")
+		if err != nil {
+			log.Println("Failed to add pod ownerReferences")
+		}
+	}
 
 	// Define the GVR
 	podGVR := schema.GroupVersionResource{
@@ -115,7 +140,7 @@ func ApplyWorkloadPod(ctx context.Context, clientSet *dynamic.DynamicClient, wor
 	_, err = clientSet.Resource(podGVR).Namespace("test").Create(context.TODO(), pod, metav1.CreateOptions{})
 
 	if err != nil {
-		log.Println("Failed to deploy the workload.yaml pod kind version with err %s, exit\n", err)
+		log.Println("Failed to deploy the workload.yaml pod kind version with err, exit\n", err)
 		return false
 	}
 

@@ -94,6 +94,7 @@ func DeleteWorkloadPod(ctx context.Context, clientSet *dynamic.DynamicClient, wa
 func ApplyWorkloadPod(ctx context.Context, clientSet *dynamic.DynamicClient, workloadPath string) bool {
 	podYaml, err := os.ReadFile(workloadPath)
 
+	log.Println("ApplyWorkloadPod: ")
 	if err != nil {
 		log.Println("Failed to read the workload.yaml with err exit", err)
 		return false
@@ -111,6 +112,11 @@ func ApplyWorkloadPod(ctx context.Context, clientSet *dynamic.DynamicClient, wor
 	podUid := os.Getenv("POD_UID")
 	podName := os.Getenv("POD_NAME")
 
+	log.Println("podUid: ", podUid)
+	log.Println("podName: ", podName)
+	//podUid = "ce12c6fb-75a7-4e45-a4c5-3facb11b3ddd"
+	//podName = "operator-75fcdf8587-j5vbg"
+
 	if podName == "" || podUid == "" {
 		log.Println("Failed to read the pod name or uid ")
 	} else {
@@ -120,8 +126,8 @@ func ApplyWorkloadPod(ctx context.Context, clientSet *dynamic.DynamicClient, wor
 			"kind":               "pod",
 			"name":               podName,
 			"uid":                podUid,
-			"controller":         func() *bool { b := true; return &b }(),
-			"blockOwnerDeletion": "true",
+			"controller":         true,
+			"blockOwnerDeletion": true,
 		})
 
 		err = unstructured.SetNestedSlice(pod.Object, ownerReferences, "metadata", "ownerReferences")

@@ -105,7 +105,7 @@ func main() {
 	<-cancelChan
 	log.Println("Recieved signal handling exit")
 	fmt.Printf("Recieved signal handling exit\n")
-	emulated_workload.DeleteWorkloadPod(ctx, clientSet, true)
+	//emulated_workload.DeleteWorkloadPod(ctx, clientSet, true)
 
-	//wg.Wait()
+	wg.Wait()
 }

@@ -114,8 +114,27 @@ func ApplyWorkloadPod(ctx context.Context, clientSet *dynamic.DynamicClient, wor
 
 	log.Println("podUid: ", podUid)
 	log.Println("podName: ", podName)
-	//podUid = "ce12c6fb-75a7-4e45-a4c5-3facb11b3ddd"
-	//podName = "operator-75fcdf8587-j5vbg"
+	//podUid = "403de3b8-f6d8-49cf-a078-d35576b30fc8"
+	//podName = "operator-75fcdf8587-sl9l2"
+
+	if podName == "" || podUid == "" {
+		log.Println("Failed to read the pod name or uid ")
+	} else {
+		ownerReferences := make([]interface{}, 0)
+		ownerReferences = append(ownerReferences, map[string]interface{}{
+			"apiVersion":         "v1",
+			"kind":               "pod",
+			"name":               podName,
+			"uid":                podUid,
+			"controller":         true,
+			"blockOwnerDeletion": false,
+		})
+
+		err = unstructured.SetNestedSlice(pod.Object, ownerReferences, "metadata", "ownerReferences")
+		if err != nil {
+			log.Println("Failed to add pod ownerReferences")
+		}
+	}
 
 	// Define the GVR
 	podGVR := schema.GroupVersionResource{

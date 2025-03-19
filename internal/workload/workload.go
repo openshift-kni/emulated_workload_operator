@@ -127,7 +127,7 @@ func ApplyWorkloadPod(ctx context.Context, clientSet *dynamic.DynamicClient, wor
 			"name":               podName,
 			"uid":                podUid,
 			"controller":         true,
-			"blockOwnerDeletion": true,
+			"blockOwnerDeletion": false,
 		})
 
 		err = unstructured.SetNestedSlice(pod.Object, ownerReferences, "metadata", "ownerReferences")
